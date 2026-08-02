@@ -1,3 +1,4 @@
+https://github.com/user-attachments/assets/9eaf7c3a-a5db-41a3-a7dd-e00eba75456d
 
 A Hyprland plugin that automatically resizes, centers, and cascades floating windows to keep your workspace organized.
 
