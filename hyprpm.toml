@@ -4,7 +4,7 @@ authors = ["darko-bunny"]
 commit_pins = [
 ]
 
-[hypr-togglefloat]
+[smartfloat]
 description = "Toggle floating dengan auto cascade, resize, dan center"
 authors = ["darko-bunny"]
 output = "smartfloat.so"
