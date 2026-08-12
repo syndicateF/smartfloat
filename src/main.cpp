@@ -20,6 +20,7 @@ inline HANDLE PHANDLE = nullptr;
 static SP<Config::Values::CIntValue> g_pTargetWidth;
 static SP<Config::Values::CIntValue> g_pTargetHeight;
 static SP<Config::Values::CFloatValue> g_pCascadeStep;
+static SP<Config::Values::CIntValue> g_pMaxAttempts;
 
 static Vector2D findNonOverlappingPosition(PHLWINDOW pTargetWindow, Vector2D candidatePos, Vector2D targetSize, const CBox& workArea) {
     const auto PMONITOR = pTargetWindow->m_monitor;
@@ -27,10 +28,13 @@ static Vector2D findNonOverlappingPosition(PHLWINDOW pTargetWindow, Vector2D can
         return candidatePos;
 
     const float STEP = g_pCascadeStep->value();
+    const int MAX_ATTEMPTS = std::max(1, (int)g_pMaxAttempts->value());
     Vector2D pos = candidatePos;
     int wrapCount = 0;
+    int attempts = 0;
 
-    while (true) {
+    while (attempts < MAX_ATTEMPTS) {
+        attempts++;
         bool collision = false;
 
         for (auto& w : Desktop::windowState()->windows()) {
@@ -65,7 +69,8 @@ static Vector2D findNonOverlappingPosition(PHLWINDOW pTargetWindow, Vector2D can
         pos.y += STEP;
     }
 
-    return pos;
+    // Failsafe: Jika mencapai max_attempts tanpa menemukan ruang, kembalikan posisi awal.
+    return candidatePos;
 }
 
 static SDispatchResult onSmartFloatToggle(std::string args) {
@@ -84,9 +89,8 @@ static SDispatchResult onSmartFloatToggle(std::string args) {
     if (!wasFloating && pWindow->m_isFloating) {
         Desktop::windowState()->raise(pWindow);
 
-        const float targetW = g_pTargetWidth->value();
-        const float targetH = g_pTargetHeight->value();
-        const Vector2D targetSize = {targetW, targetH};
+        float targetW = (float)g_pTargetWidth->value();
+        float targetH = (float)g_pTargetHeight->value();
 
         const auto PMONITOR = pWindow->m_monitor;
         if (!PMONITOR)
@@ -99,6 +103,11 @@ static SDispatchResult onSmartFloatToggle(std::string args) {
         } else {
             workArea = {PMONITOR->m_position.x, PMONITOR->m_position.y, PMONITOR->m_size.x, PMONITOR->m_size.y};
         }
+
+        // Clamp ukuran target agar tidak melebihi workArea
+        targetW = std::min((float)workArea.w, targetW);
+        targetH = std::min((float)workArea.h, targetH);
+        const Vector2D targetSize = {targetW, targetH};
 
         const Vector2D centerPos = Vector2D{workArea.x, workArea.y} + (Vector2D{workArea.w, workArea.h} - targetSize) / 2.0;
 
@@ -141,10 +150,12 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     g_pTargetWidth = Hyprutils::Memory::makeShared<Config::Values::CIntValue>("plugin:smartfloat:target_width", "Target width", 800);
     g_pTargetHeight = Hyprutils::Memory::makeShared<Config::Values::CIntValue>("plugin:smartfloat:target_height", "Target height", 500);
     g_pCascadeStep = Hyprutils::Memory::makeShared<Config::Values::CFloatValue>("plugin:smartfloat:cascade_step", "Cascade step", 30.0f);
+    g_pMaxAttempts = Hyprutils::Memory::makeShared<Config::Values::CIntValue>("plugin:smartfloat:max_attempts", "Max cascade attempts", 50);
 
     HyprlandAPI::addConfigValueV2(PHANDLE, g_pTargetWidth);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_pTargetHeight);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_pCascadeStep);
+    HyprlandAPI::addConfigValueV2(PHANDLE, g_pMaxAttempts);
 
     HyprlandAPI::addDispatcherV2(PHANDLE, "smartfloat:toggle", onSmartFloatToggle);
     HyprlandAPI::addLuaFunction(PHANDLE, "smartfloat", "toggle", onSmartFloatToggleLua);
