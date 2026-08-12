@@ -69,7 +69,6 @@ static Vector2D findNonOverlappingPosition(PHLWINDOW pTargetWindow, Vector2D can
         pos.y += STEP;
     }
 
-    // Failsafe: Jika mencapai max_attempts tanpa menemukan ruang, kembalikan posisi awal.
     return candidatePos;
 }
 
@@ -104,7 +103,6 @@ static SDispatchResult onSmartFloatToggle(std::string args) {
             workArea = {PMONITOR->m_position.x, PMONITOR->m_position.y, PMONITOR->m_size.x, PMONITOR->m_size.y};
         }
 
-        // Clamp ukuran target agar tidak melebihi workArea
         targetW = std::min((float)workArea.w, targetW);
         targetH = std::min((float)workArea.h, targetH);
         const Vector2D targetSize = {targetW, targetH};
