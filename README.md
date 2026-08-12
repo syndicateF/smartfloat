@@ -17,8 +17,9 @@ hl.config({
     plugin = {
         smartfloat = {
             target_width = 1000,
-            target_height = 600,
+            target_height = 1000,
             cascade_step = 25,
+            max_attempts = 10
         },
     },
 })
